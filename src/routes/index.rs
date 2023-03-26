@@ -19,7 +19,7 @@ pub fn index(event: Request) -> RequestResponse {
         .with_headers(event.headers())
         .with_method(event.method())
         .with_query(&event.query_string_parameters())
-        .with_payload(payload);
+        .with_payload(&payload);
 
     Ok(Response::builder()
         .status(200)

@@ -5,15 +5,14 @@ use lambda_http::{
 };
 
 use std::collections::HashMap;
-use std::ops::Deref;
 
 #[derive(serde::Serialize, serde::Deserialize, Default)]
 pub struct DebugResponse<T>
 where
     T: serde::Serialize + Default,
 {
-    headers: QueryObject,
-    query: QueryMap,
+    headers: HashMap<String, String>,
+    query: HashMap<String, Vec<String>>,
     method: String,
     path_raw: String,
     context: Context,
@@ -21,34 +20,38 @@ where
     payload: Option<T>,
 }
 
-/// Wrapper type to allow for serialization of HeaderMap
-#[derive(serde::Serialize, serde::Deserialize, Default)]
-struct QueryObject(HashMap<String, String>);
+trait ToHashMap<T> {
+    fn to_hashmap(&self) -> HashMap<String, T>;
+}
 
-impl Deref for QueryObject {
-    type Target = HashMap<String, String>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl ToHashMap<String> for HeaderMap<HeaderValue> {
+    fn to_hashmap(&self) -> HashMap<String, String> {
+        self.iter()
+            .map(|(k, v)| {
+                (
+                    k.as_str().to_owned(),
+                    String::from_utf8_lossy(v.as_bytes()).into_owned(),
+                )
+            })
+            .collect()
     }
 }
 
-impl From<&HeaderMap<HeaderValue>> for QueryObject {
-    fn from(hm: &HeaderMap<HeaderValue>) -> Self {
-        Self(HashMap::from_iter(hm.iter().map(|(k, v)| {
-            (
-                k.as_str().to_owned(),
-                String::from_utf8_lossy(v.as_bytes()).into_owned(),
-            )
-        })))
+impl ToHashMap<Vec<String>> for QueryMap {
+    fn to_hashmap(&self) -> HashMap<String, Vec<String>> {
+        self.iter().fold(HashMap::new(), |mut acc, (k, v)| {
+            acc.entry(k.to_owned()).or_default().push(v.to_owned());
+            acc
+        })
     }
 }
 
 impl<T> DebugResponse<T>
 where
-    T: serde::Serialize + Default,
+    T: serde::Serialize + Clone + Default,
 {
     pub fn with_headers(mut self, headers: &HeaderMap<HeaderValue>) -> Self {
-        self.headers = QueryObject::from(headers);
+        self.headers = headers.to_hashmap();
         self
     }
     pub fn with_context(mut self, context: &Context) -> Self {
@@ -77,11 +80,11 @@ where
         self
     }
     pub fn with_query(mut self, query: &QueryMap) -> Self {
-        self.query = query.clone();
+        self.query = query.to_hashmap();
         self
     }
-    pub fn with_payload(mut self, payload: Option<T>) -> Self {
-        self.payload = payload;
+    pub fn with_payload(mut self, payload: &Option<T>) -> Self {
+        self.payload = payload.clone();
         self
     }
     pub fn new() -> Self {
