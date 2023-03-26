@@ -16,11 +16,12 @@ where
     query: QueryObject,
     method: String,
     path_raw: String,
-    context: serde_json::Value,
+    context: Context,
     path_params: Vec<String>,
     payload: Option<T>,
 }
 
+/// Wrapper type to allow for serialization of HeaderMap and QueryMap
 #[derive(serde::Serialize, serde::Deserialize, Default)]
 struct QueryObject(HashMap<String, String>);
 
@@ -33,25 +34,20 @@ impl Deref for QueryObject {
 
 impl From<&HeaderMap<HeaderValue>> for QueryObject {
     fn from(hm: &HeaderMap<HeaderValue>) -> Self {
-        let mut map = HashMap::new();
-        for (k, v) in hm {
-            let k = k.as_str().to_owned();
-            let v = String::from_utf8_lossy(v.as_bytes()).into_owned();
-            map.insert(k, v);
-        }
-        Self(map)
+        Self(HashMap::from_iter(hm.iter().map(|(k, v)| {
+            (
+                k.as_str().to_owned(),
+                String::from_utf8_lossy(v.as_bytes()).into_owned(),
+            )
+        })))
     }
 }
 
 impl From<&QueryMap> for QueryObject {
     fn from(qm: &QueryMap) -> Self {
-        let mut map = HashMap::new();
-        for (k, v) in qm.iter() {
-            let k = k.to_owned();
-            let v = v.to_owned();
-            map.insert(k, v);
-        }
-        Self(map)
+        Self(HashMap::from_iter(
+            qm.iter().map(|(k, v)| (k.to_owned(), v.to_owned())),
+        ))
     }
 }
 
@@ -64,7 +60,7 @@ where
         self
     }
     pub fn with_context(mut self, context: &Context) -> Self {
-        self.context = serde_json::to_value(context).unwrap();
+        self.context = context.clone();
         self
     }
     pub fn with_method<M>(mut self, method: M) -> Self
