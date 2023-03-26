@@ -13,7 +13,7 @@ where
     T: serde::Serialize + Default,
 {
     headers: QueryObject,
-    query: QueryObject,
+    query: QueryMap,
     method: String,
     path_raw: String,
     context: Context,
@@ -21,7 +21,7 @@ where
     payload: Option<T>,
 }
 
-/// Wrapper type to allow for serialization of HeaderMap and QueryMap
+/// Wrapper type to allow for serialization of HeaderMap
 #[derive(serde::Serialize, serde::Deserialize, Default)]
 struct QueryObject(HashMap<String, String>);
 
@@ -40,14 +40,6 @@ impl From<&HeaderMap<HeaderValue>> for QueryObject {
                 String::from_utf8_lossy(v.as_bytes()).into_owned(),
             )
         })))
-    }
-}
-
-impl From<&QueryMap> for QueryObject {
-    fn from(qm: &QueryMap) -> Self {
-        Self(HashMap::from_iter(
-            qm.iter().map(|(k, v)| (k.to_owned(), v.to_owned())),
-        ))
     }
 }
 
@@ -85,7 +77,7 @@ where
         self
     }
     pub fn with_query(mut self, query: &QueryMap) -> Self {
-        self.query = QueryObject::from(query);
+        self.query = query.clone();
         self
     }
     pub fn with_payload(mut self, payload: Option<T>) -> Self {

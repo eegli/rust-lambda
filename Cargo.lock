@@ -493,6 +493,7 @@ dependencies = [
  "lambda_http",
  "lambda_runtime",
  "lazy_static",
+ "query_map",
  "serde",
  "serde_json",
  "tokio",
