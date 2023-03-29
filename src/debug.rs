@@ -54,8 +54,8 @@ where
         self.headers = headers.to_hashmap();
         self
     }
-    pub fn with_context(mut self, context: &Context) -> Self {
-        self.context = context.clone();
+    pub fn with_context(mut self, context: Context) -> Self {
+        self.context = context;
         self
     }
     pub fn with_method<M>(mut self, method: M) -> Self
@@ -79,7 +79,7 @@ where
             .collect::<Vec<String>>();
         self
     }
-    pub fn with_query(mut self, query: &QueryMap) -> Self {
+    pub fn with_query(mut self, query: QueryMap) -> Self {
         self.query = query.to_hashmap();
         self
     }

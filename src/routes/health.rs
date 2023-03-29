@@ -1,14 +1,5 @@
-use lambda_http::{
-    http::{header, StatusCode},
-    Response,
-};
+use crate::respond;
 
-use crate::RequestResponse;
-
-pub fn health() -> RequestResponse {
-    let status = StatusCode::OK;
-    Ok(Response::builder()
-        .status(status)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body("Ok".into())?)
+pub async fn health() -> respond::Response {
+    respond::json(serde_json::json!({ "status": "ok" }))
 }
