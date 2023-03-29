@@ -2,7 +2,7 @@ use crate::{respond, Response};
 use aws_sdk_dynamodb::Client as DynamoClient;
 
 pub async fn list_tables() -> Response {
-    /// This client needs to be initialized once...
+    // This client needs to be initialized once...
     let conf = aws_config::from_env()
         .profile_name("nougats-spotify")
         .region("eu-central-1")
